@@ -1,0 +1,4 @@
+exclude plover_search_translation/*_rc.py
+exclude plover_search_translation/*_ui.py
+include plover_search_translation/*.ui
+recursive-include plover_search_translation/resources *
