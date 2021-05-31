@@ -81,8 +81,8 @@ class Dictionary(StenoDictionary):
 			#	return data
 
 		if key in self.briefs:
-			#if manager.instance.is_showing(self)
-			#	manager.
+			if manager.instance and manager.instance.is_showing(self):
+				manager.instance.close_window()
 
 			result,=[x for x in self.entries if x.brief==key]
 			return result.translation

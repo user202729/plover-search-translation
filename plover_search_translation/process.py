@@ -69,6 +69,10 @@ def show_dialog(normal_window: bool=True)->None:
 	if not normal_window:
 		dialog.activateWindow()
 
+def close_window()->None:
+	dialog.hide()
+	connection.send((c.CLOSE_WINDOW_MESSAGE, None))
+
 def listener_thread_run()->None:
 	while True:
 		message_type, message_content=connection.recv()
@@ -83,13 +87,11 @@ def listener_thread_run()->None:
 
 		elif message_type==c.EXIT_MESSAGE:
 			signal_data.emit(exit_)
+			connection.send((c.EXIT_MESSAGE, None))
 			break
 
-		#elif message_type==c.:
-		#	result=dialog.get_row_data(dialog.row())
-		#	connection.send((c.CLOSE_WINDOW_MESSAGE, result))
-		#	if result:
-		#		dialog.hide()
+		elif message_type==c.CLOSE_WINDOW_MESSAGE:
+			signal_data.emit(close_window)
 
 		else:
 			show_error(f"Message type {message_type} is not recognized")

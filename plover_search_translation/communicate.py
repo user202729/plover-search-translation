@@ -6,6 +6,7 @@ Run in the parent process. Handle the part related to the GUI and signals, but n
 import sys
 import subprocess
 from threading import Thread, Lock
+from queue import Queue
 from typing import List, Optional
 
 from subprocess_connection import Connection
@@ -23,6 +24,7 @@ class Process:
 		The _listen_thread. Callback functions will be called in this thread.
 		"""
 		self._connection_send_lock: Lock=Lock()
+		self._close_window_queue: Queue=Queue()
 		self._connection: Connection=Connection(
 				subprocess.Popen([sys.executable, "-m", "plover_search_translation.process"],
 					stdin=subprocess.PIPE,
@@ -66,13 +68,25 @@ class Process:
 			elif message_type==c.SHOW_ERROR_MESSAGE:
 				assert isinstance(message_content, str)
 				self.show_error(message_content)
+				
+			elif message_type==c.EXIT_MESSAGE:
+				break
+
+			elif message_type==c.CLOSE_WINDOW_MESSAGE:
+				# subprocess done closing the window
+				self._close_window_queue.put(None)
 
 			else:
 				raise RuntimeError(f"Message type {message_type} is not recognized")
 
-	#def close_window(self)->None:
-	#	 with self._connection_send_lock:
-	#		 self._connection.send((c.CLOSE_WINDOW_MESSAGE, None))
+	def close_window(self)->None:
+		"""
+		Close the currently-opening window (only return when the window is closed).
+		"""
+		assert self._close_window_queue.empty()
+		with self._connection_send_lock:
+			self._connection.send((c.CLOSE_WINDOW_MESSAGE, None))
+		self._close_window_queue.get(timeout=1)
 
 	def exit(self)->None:
 		with self._connection_send_lock:

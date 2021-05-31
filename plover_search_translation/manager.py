@@ -108,7 +108,11 @@ class Manager:
 		assert self._dictionary is not None
 		return self._dictionary.search(query)
 
-
+	def close_window(self)->None:
+		assert self._process
+		assert self._dictionary is not None
+		self._process.close_window()
+		self._dictionary=None
 
 	def show(self, dictionary: Union[str, Dictionary])->None:
 		if self._dictionary is not None:

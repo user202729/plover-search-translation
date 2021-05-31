@@ -19,12 +19,17 @@ EXIT_MESSAGE="exit"
 """
 Sent from parent to child
 Parameters: none
-The subprocess should exit
+The subprocess should exit, then send back a EXIT_MESSAGE to parent.
+(only so that the listener thread in the parent can exit cleanly...?)
+
+subprocess must not initiate EXIT_MESSAGE, only reply.
 """
 
-#CLOSE_WINDOW_MESSAGE="close_window"
-
-
+CLOSE_WINDOW_MESSAGE="close_window"
+"""
+Sent from parent to child
+child should respond with CLOSE_WINDOW_MESSAGE after exit
+"""
 
 ADD_TRANSLATION_MESSAGE="add_translation"
 """
