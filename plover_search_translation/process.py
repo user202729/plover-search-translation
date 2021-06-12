@@ -5,12 +5,14 @@ This module should run the GUI subprocess.
 
 
 import threading
-from typing import List, Dict, Callable, Tuple, Optional
+import functools
+from typing import List, Dict, Callable, Tuple, Optional, TypeVar
+import typing
 import faulthandler
 faulthandler.enable()
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtCore import Qt  # type: ignore
+from PyQt5.QtWidgets import QApplication  # type: ignore
 
 from plover_search_translation.gui import SearchTranslationDialog
 
@@ -29,6 +31,13 @@ def execute_function(x):
 	x()
 signal_data.connect(execute_function)
 
+F=TypeVar("F", bound=Callable)
+def execute_on_main_thread(f: F)->F:  # note: returns immediately, does not wait for the call to complete
+	@functools.wraps(f)
+	def result(*args, **kwargs):
+		signal_data.emit(functools.partial(f, *args, **kwargs))
+	return typing.cast(F, result)
+
 app=QApplication([])
 app.setQuitOnLastWindowClosed(False)
 dialog=SearchTranslationDialog()
@@ -39,6 +48,7 @@ search_result_queue: Queue[List[Entry]]=Queue()
 
 connection=Connection()
 
+@execute_on_main_thread
 def exit_():
 	dialog.hide()
 	app.exit(0)
@@ -55,6 +65,7 @@ def set_description_text(new_text: str)->None:
 	disable_description_change_hook=False
 
 
+@execute_on_main_thread
 def show_dialog(normal_window: bool=True)->None:
 	assert not dialog.isVisible()
 	if not normal_window:
@@ -69,6 +80,7 @@ def show_dialog(normal_window: bool=True)->None:
 	if not normal_window:
 		dialog.activateWindow()
 
+@execute_on_main_thread
 def close_window()->None:
 	dialog.hide()
 	connection.send((c.CLOSE_WINDOW_MESSAGE, None))
@@ -78,7 +90,7 @@ def listener_thread_run()->None:
 		message_type, message_content=connection.recv()
 
 		if message_type==c.OPEN_DIALOG_MESSAGE:
-			signal_data.emit(show_dialog)
+			show_dialog()
 
 		elif message_type==c.SEARCH_MESSAGE:
 			assert search_result_queue.empty()
@@ -86,12 +98,12 @@ def listener_thread_run()->None:
 			search_result_queue.put(message_content)
 
 		elif message_type==c.EXIT_MESSAGE:
-			signal_data.emit(exit_)
+			exit_()
 			connection.send((c.EXIT_MESSAGE, None))
 			break
 
 		elif message_type==c.CLOSE_WINDOW_MESSAGE:
-			signal_data.emit(close_window)
+			close_window()
 
 		else:
 			show_error(f"Message type {message_type} is not recognized")
