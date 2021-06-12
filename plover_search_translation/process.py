@@ -4,9 +4,10 @@ This module should run the GUI subprocess.
 """
 
 
-import threading
+from dataclasses import dataclass
+
 import functools
-from typing import List, Dict, Callable, Tuple, Optional, TypeVar
+from typing import List, Callable, Optional, TypeVar
 import typing
 import faulthandler
 faulthandler.enable()
@@ -45,27 +46,52 @@ dialog=SearchTranslationDialog()
 
 message=Message()
 
-@execute_on_main_thread
-def exit_():
-	dialog.hide()
-	app.exit(0)
+
+@dataclass(frozen=True)
+class State: pass
+
+@dataclass(frozen=True)
+class SingletonState(State):
+	name: str
+
+WINDOW_CLOSED=SingletonState("WINDOW_CLOSED")
+WINDOW_OPEN=SingletonState("WINDOW_OPEN")
+PROGRAMMATICALLY_EDITING_DESCRIPTION=SingletonState("PROGRAMMATICALLY_EDITING_DESCRIPTION")
+
+assert WINDOW_CLOSED is not WINDOW_OPEN  # (of course)
+
+@dataclass(frozen=True)
+class Editing(State):
+	entry: Entry
+	row: int
+
+
+state: State=WINDOW_CLOSED
+
+def set_state(new_state: State)->None:
+	global state
+	state=new_state
+
+
 
 
 def show_error(error: str)->None:
 	message.call.show_error(error)
 
-disable_description_change_hook: bool=False
 def set_description_text(new_text: str)->None:
-	global disable_description_change_hook
-	disable_description_change_hook=True
+	assert state is WINDOW_OPEN, state
+	old_state=state
+	set_state(PROGRAMMATICALLY_EDITING_DESCRIPTION)
 	dialog.description.setText(new_text)
-	disable_description_change_hook=False
+	set_state(old_state)
 
 
 @message.register_call
 @execute_on_main_thread
 def open_dialog(normal_window: bool=True)->None:
 	assert not dialog.isVisible()
+	assert state is WINDOW_CLOSED, state
+	set_state(WINDOW_OPEN)
 	if not normal_window:
 		dialog.setWindowFlag(Qt.FramelessWindowHint)
 		dialog.setWindowFlag(Qt.BypassWindowManagerHint)
@@ -82,11 +108,14 @@ def open_dialog(normal_window: bool=True)->None:
 @execute_on_main_thread
 def close_window(callback, args, kwargs)->None:
 	dialog.hide()
+	assert state is WINDOW_OPEN or isinstance(state, Editing)
+	set_state(WINDOW_CLOSED)
 	callback(None)
 	time.sleep(0.05)  # some window manager might have problems without this
 
-
 def rejected()->None:
+	assert state is WINDOW_OPEN or isinstance(state, Editing)
+	set_state(WINDOW_CLOSED)
 	message.call.picked(None)
 
 dialog.rejected.connect(rejected)
@@ -94,17 +123,30 @@ dialog.rejected.connect(rejected)
 from .lib import text_to_outline
 
 def add_translation()->None:
+	assert state is WINDOW_OPEN or isinstance(state, Editing)
+
 	if not (dialog.output.text() and dialog.description.text()):
 		show_error("Output and description must be filled")
 		return
-	dialog.matches.insertRow(0)
+
 	new_entry=Entry(
 		dialog.output.text(),
 		dialog.description.text(),
 		text_to_outline(dialog.brief.text()),
 		)
-	dialog.set_row_data(0, new_entry)
-	message.call.add_translation(new_entry)
+
+	if state is WINDOW_OPEN:
+		dialog.matches.insertRow(0)
+		dialog.set_row_data(0, new_entry)
+		message.call.add_translation(new_entry)
+	else:
+		assert isinstance(state, Editing), state
+		old_entry=state.entry
+		dialog.set_row_data(state.row, new_entry)
+		set_state(WINDOW_OPEN)
+		if old_entry!=new_entry:
+			message.call.remove_translation(old_entry)
+			message.call.add_translation(new_entry)
 
 	dialog.output.setText("")
 	dialog.description.setFocus()
@@ -124,27 +166,54 @@ def pick()->None:
 	if row is None: return
 
 	entry=dialog.get_row_data(row)
+
+	if isinstance(state, Editing):
+		show_error("Pick while editing not supported")
+		return
+
+	assert state is WINDOW_OPEN, state
+	set_state(WINDOW_CLOSED)
+
 	dialog.hide()
 	message.call.picked(entry)
 
 dialog.pickButton.clicked.connect(pick)
 
+editing_entry_placeholder=Entry(
+		"[...]",
+		"[...]",
+		("[...]",),
+		)
+
 def edit_translation()->None:
+	if isinstance(state, Editing):
+		return # clicking [edit] twice is equivalent to once
+	assert state is WINDOW_OPEN, state
+
 	row=get_row()
 	if row is None: return
 
 	entry=dialog.get_row_data(row)
-	dialog.matches.removeRow(row)
+	dialog.set_row_data(row, editing_entry_placeholder)
 
 	dialog.output.setText(entry.translation)
 	set_description_text(entry.description)
 	dialog.brief.setText("/".join(entry.brief))
 
-	message.call.remove_translation(entry)
+	set_state(Editing(entry, row))
+
 
 dialog.editButton.clicked.connect(edit_translation)
 
 def delete_translation()->None:
+	if isinstance(state, Editing):
+		message.call.remove_translation(state.entry)
+		dialog.matches.removeRow(state.row)
+		set_state(WINDOW_OPEN)
+		return
+
+	assert state is WINDOW_OPEN, state
+
 	row=get_row()
 	if row is None: return
 
@@ -155,8 +224,12 @@ def delete_translation()->None:
 dialog.deleteButton.clicked.connect(delete_translation)
 
 def description_search_changed(text: str)->None:
-	if disable_description_change_hook:
+	if state is PROGRAMMATICALLY_EDITING_DESCRIPTION or isinstance(state, Editing):
 		return
+	if state is WINDOW_CLOSED:
+		# this might happen if the description text is modified right before the window is closed
+		return
+	assert state is WINDOW_OPEN, state
 
 	result: List[Entry] = message.func.search(text)
 	dialog.matches.setRowCount(len(result))
@@ -165,7 +238,7 @@ def description_search_changed(text: str)->None:
 
 dialog.description.textChanged.connect(description_search_changed)
 
-message.start()
+message.start(on_stop=lambda: app.exit(0))
 
 returncode=app.exec_()
 assert returncode==0
