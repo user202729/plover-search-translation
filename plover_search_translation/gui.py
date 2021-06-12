@@ -17,8 +17,7 @@ from PyQt5.QtCore import QEvent, Qt
 from PyQt5.QtWidgets import QTableWidgetItem, QDialog, QShortcut
 
 from .search_translation_dialog_ui import Ui_SearchTranslationDialog
-from .engine import Entry
-from .lib import text_to_outline
+from .lib import text_to_outline, Entry
 
 
 qt_key_to_value = {

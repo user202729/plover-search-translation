@@ -1,3 +1,7 @@
+"""
+Dictionary entry point for Plover.
+"""
+
 import sys
 import json
 from typing import Tuple, Dict, List, Optional, TypeVar, Callable
@@ -10,9 +14,8 @@ import functools
 from plover.steno_dictionary import StenoDictionary  # type: ignore
 from subprocess_connection import Connection
 
-from .engine import Entry
 from . import manager
-from .lib import with_print_exception
+from .lib import Entry, with_print_exception
 
 
 process: Optional[Connection]=None

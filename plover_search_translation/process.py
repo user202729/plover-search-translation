@@ -14,10 +14,10 @@ faulthandler.enable()
 from PyQt5.QtCore import Qt  # type: ignore
 from PyQt5.QtWidgets import QApplication  # type: ignore
 
-from plover_search_translation.gui import SearchTranslationDialog
-
 from subprocess_connection import Message
-from plover_search_translation.engine import Entry
+
+from .lib import Entry
+from .gui import SearchTranslationDialog
 
 from PyQt5.QtCore import pyqtSignal, QVariant, QObject
 class SignalObject(QObject):

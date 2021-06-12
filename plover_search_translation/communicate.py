@@ -10,7 +10,7 @@ from queue import Queue
 from typing import List, Optional
 
 from subprocess_connection import Message
-from plover_search_translation.engine import Entry
+from .lib import Entry
 
 class Process:
 	"""

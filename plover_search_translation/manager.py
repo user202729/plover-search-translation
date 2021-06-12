@@ -11,7 +11,7 @@ import typing
 if typing.TYPE_CHECKING:
 	from plover.engine import StenoEngine  # type: ignore
 	from typing import Optional, List, Dict, Union
-	from .engine import Entry
+	from .lib import Entry
 	from .dictionary import Dictionary
 
 from .communicate import Process
