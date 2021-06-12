@@ -12,7 +12,8 @@ from queue import Queue
 from typing import List, Optional
 
 from subprocess_connection import Message
-from .lib import Entry
+
+from plover_search_translation.lib import Entry
 
 class Process:
 	"""
