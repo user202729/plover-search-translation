@@ -11,6 +11,8 @@ import typing
 import faulthandler
 faulthandler.enable()
 
+import time
+
 from PyQt5.QtCore import Qt  # type: ignore
 from PyQt5.QtWidgets import QApplication  # type: ignore
 
@@ -85,6 +87,7 @@ def open_dialog(normal_window: bool=True)->None:
 def close_window(callback, args, kwargs)->None:
 	dialog.hide()
 	callback(None)
+	time.sleep(0.05)  # some window manager might have problems without this
 
 
 def rejected()->None:

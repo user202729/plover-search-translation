@@ -12,3 +12,8 @@ if typing.TYPE_CHECKING:
 def show_search_dialog(engine: StenoEngine, argument: str)->None:
 	from . import manager
 	manager.get().show(argument)
+
+def close_window(engine: StenoEngine, argument: str)->None:
+	assert not argument
+	from . import manager
+	manager.get().close_window()

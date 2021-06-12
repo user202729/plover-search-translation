@@ -59,6 +59,8 @@ class Dictionary(StenoDictionary):
 	def _getitem(self, key: Tuple[str, ...])->str:
 		"""
 		Lookup an item by its brief (outline).
+
+		Also return the command to close the window if it's opening.
 		"""
 		if key==(self.search_stroke,):
 			manager.get().ensure_active_dictionary(self)
@@ -73,13 +75,14 @@ class Dictionary(StenoDictionary):
 		result=self._dict[key]  # might raise KeyError
 		assert result is not None
 		if manager.instance and manager.instance.is_showing(self):
-			manager.instance.close_window()
+			result="{:command:plover_search_translation_close_window}"+result
+			# (must close the window before sending the commands)
 		return result
 
 	@with_lock
 	def __getitem__(self, key: Tuple[str, ...])->str:
 		"""
-		Lookup an item by its brief (outline).
+		Like `_getitem`, but locked.
 		"""
 		return self._getitem(key)
 
