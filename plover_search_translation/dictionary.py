@@ -157,6 +157,7 @@ class Dictionary(StenoDictionary):
 					",\n".join(
 						json.dumps(entry.tuple(), ensure_ascii=False) for entry in self.entries
 						) +
+					'\n'
 					']\n'
 					'}\n'
 					)
