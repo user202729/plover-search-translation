@@ -99,10 +99,12 @@ class Manager:
 	def on_add(self, entry: Entry)->None:
 		assert self._dictionary is not None
 		self._dictionary.add(entry)
+		self._dictionary.save()
 
 	def on_remove(self, entry: Entry)->None:
 		assert self._dictionary is not None
 		self._dictionary.remove(entry)
+		self._dictionary.save()
 
 	def on_search(self, query: str)->List[Entry]:
 		assert self._dictionary is not None
