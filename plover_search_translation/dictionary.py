@@ -55,6 +55,9 @@ class Dictionary(StenoDictionary):
 
 	@with_lock
 	def __getitem__(self, key: Tuple[str, ...])->str:
+		"""
+		Lookup an item by its brief (outline).
+		"""
 		global process
 		if len(key)==1:
 			if key[0]==self.search_stroke:
@@ -98,6 +101,9 @@ class Dictionary(StenoDictionary):
 		raise RuntimeError("Editing the dictionary is not supported. Use the plugin's editing tools instead.")
 
 	def get(self, key: Tuple[str, ...], default: Optional[str]=None)->Optional[str]:
+		"""
+		Lookup an item by its brief (outline).
+		"""
 		try: result=self[key]
 		except KeyError: return default
 		if result is None: return default
@@ -109,11 +115,17 @@ class Dictionary(StenoDictionary):
 
 	@with_lock
 	def _add_no_save(self, entry: Entry)->None:
+		"""
+		Internal method. Add an entry without saving.
+		"""
 		assert entry not in self.briefs
 		self.entries.append(entry)
 
 	@with_lock
 	def _remove_no_save(self, entry: Entry)->None:
+		"""
+		Internal method, remove an entry without saving.
+		"""
 		old_length=len(self.entries)
 		self.entries=[x for x in self.entries if entry!=x]
 		assert old_length-1==len(self.entries), (self.entries, old_length, entry)
@@ -123,12 +135,18 @@ class Dictionary(StenoDictionary):
 
 	@with_print_exception
 	def add(self, entry: Entry)->None:
+		"""
+		Add an entry to the dictionary, and save to disk.
+		"""
 		self._add_no_save(entry)
 		self._check_long_key()
 		self.save()
 
 	@with_print_exception
 	def remove(self, entry: Entry)->None:
+		"""
+		Remove an entry from the dictionary, and save to disk.
+		"""
 		self._remove_no_save(entry)
 		self.save()
 
@@ -165,6 +183,9 @@ class Dictionary(StenoDictionary):
 					)
 
 	def search(self, query: str)->List[Entry]:
+		"""
+		Return the entries that match the query.
+		"""
 		return sorted(
 				[entry for entry in self.entries if query in entry.description],
 				key=lambda entry: len(entry.description))[:20]
