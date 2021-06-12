@@ -15,7 +15,7 @@ def with_print_exception(function: T)->T:
 		except:
 			import traceback
 			traceback.print_exc()
-			from plover import log
+			from plover import log  # type: ignore
 			log.error(traceback.format_exc())
 			raise
 	return typing.cast(T, result)  # TODO?

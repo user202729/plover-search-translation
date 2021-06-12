@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import typing
 if typing.TYPE_CHECKING:
-	from plover.engine import StenoEngine
+	from plover.engine import StenoEngine  # type: ignore
 	from typing import Optional, List, Dict, Union
 	from .engine import Entry
 	from .dictionary import Dictionary
@@ -58,7 +58,7 @@ class Manager:
 
 
 	def show_error(self, message: str)->None:
-		from plover import log
+		from plover import log  # type: ignore
 		log.error(message)
 
 	def on_pick(self, entry: Optional[Entry])->None:
@@ -75,8 +75,8 @@ class Manager:
 
 		try:
 			with self._engine:
-				from plover.steno import Stroke
-				from plover.translation import _mapping_to_macro, Translation
+				from plover.steno import Stroke  # type: ignore
+				from plover.translation import _mapping_to_macro, Translation  # type: ignore
 				stroke = Stroke([]) # required, because otherwise Plover will try to merge the outlines together
 				# and the outline [] (instead of [Stroke([])]) can be merged to anything
 				macro = _mapping_to_macro(mapping, stroke)

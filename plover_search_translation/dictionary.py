@@ -7,12 +7,11 @@ import subprocess
 from threading import Lock, Thread
 import functools
 
-from plover.steno_dictionary import StenoDictionary
+from plover.steno_dictionary import StenoDictionary  # type: ignore
 from subprocess_connection import Connection
 
 from .engine import Entry
 from . import manager
-from . import connection_constants as c
 from .lib import with_print_exception
 
 

@@ -16,8 +16,7 @@ from PyQt5.QtWidgets import QApplication  # type: ignore
 
 from plover_search_translation.gui import SearchTranslationDialog
 
-from subprocess_connection import Connection
-from plover_search_translation import connection_constants as c
+from subprocess_connection import Message
 from plover_search_translation.engine import Entry
 
 from PyQt5.QtCore import pyqtSignal, QVariant, QObject
@@ -44,9 +43,9 @@ dialog=SearchTranslationDialog()
 
 from queue import Queue
 
-search_result_queue: Queue[List[Entry]]=Queue()
+search_result_queue: Queue[List[Entry]]=Queue(maxsize=1)
 
-connection=Connection()
+message=Message()
 
 @execute_on_main_thread
 def exit_():
@@ -54,8 +53,8 @@ def exit_():
 	app.exit(0)
 
 
-def show_error(message: str)->None:
-	connection.send((c.SHOW_ERROR_MESSAGE, message))
+def show_error(error: str)->None:
+	message.call.show_error(error)
 
 disable_description_change_hook: bool=False
 def set_description_text(new_text: str)->None:
@@ -66,7 +65,7 @@ def set_description_text(new_text: str)->None:
 
 
 @execute_on_main_thread
-def show_dialog(normal_window: bool=True)->None:
+def open_dialog(normal_window: bool=True)->None:
 	assert not dialog.isVisible()
 	if not normal_window:
 		dialog.setWindowFlag(Qt.FramelessWindowHint)
@@ -83,40 +82,15 @@ def show_dialog(normal_window: bool=True)->None:
 @execute_on_main_thread
 def close_window()->None:
 	dialog.hide()
-	connection.send((c.CLOSE_WINDOW_MESSAGE, None))
+	message.call.window_closed()
 
-def listener_thread_run()->None:
-	while True:
-		message_type, message_content=connection.recv()
+message.call.open_dialog = open_dialog
 
-		if message_type==c.OPEN_DIALOG_MESSAGE:
-			show_dialog()
+message.call.close_window = close_window
 
-		elif message_type==c.SEARCH_MESSAGE:
-			assert search_result_queue.empty()
-			assert isinstance(message_content, list)
-			search_result_queue.put(message_content)
-
-		elif message_type==c.EXIT_MESSAGE:
-			exit_()
-			connection.send((c.EXIT_MESSAGE, None))
-			break
-
-		elif message_type==c.CLOSE_WINDOW_MESSAGE:
-			close_window()
-
-		else:
-			show_error(f"Message type {message_type} is not recognized")
-
-
-listener_thread=threading.Thread(target=listener_thread_run)
-listener_thread.start()
 
 def rejected()->None:
-	connection.send((
-		c.PICK_BUTTON_MESSAGE,
-		None
-		))
+	message.call.picked(None)
 
 dialog.rejected.connect(rejected)
 
@@ -133,10 +107,7 @@ def add_translation()->None:
 		text_to_outline(dialog.brief.text()),
 		)
 	dialog.set_row_data(0, new_entry)
-	connection.send((
-		c.ADD_TRANSLATION_MESSAGE,
-		new_entry
-		))
+	message.call.add_translation(new_entry)
 
 	dialog.output.setText("")
 	dialog.description.setFocus()
@@ -157,10 +128,7 @@ def pick()->None:
 
 	entry=dialog.get_row_data(row)
 	dialog.hide()
-	connection.send((
-		c.PICK_BUTTON_MESSAGE,
-		entry
-		))
+	message.call.picked(entry)
 
 dialog.pickButton.clicked.connect(pick)
 
@@ -175,10 +143,7 @@ def edit_translation()->None:
 	set_description_text(entry.description)
 	dialog.brief.setText("/".join(entry.brief))
 
-	connection.send((
-		c.REMOVE_TRANSLATION_MESSAGE,
-		entry
-		))
+	message.call.remove_translation(entry)
 
 dialog.editButton.clicked.connect(edit_translation)
 
@@ -188,10 +153,7 @@ def delete_translation()->None:
 
 	entry=dialog.get_row_data(row)
 	dialog.matches.removeRow(row)
-	connection.send((
-		c.REMOVE_TRANSLATION_MESSAGE,
-		entry
-		))
+	message.call.remove_translation(entry)
 
 dialog.deleteButton.clicked.connect(delete_translation)
 
@@ -199,18 +161,14 @@ def description_search_changed(text: str)->None:
 	if disable_description_change_hook:
 		return
 
-	connection.send((
-		c.SEARCH_MESSAGE,
-		text
-		))
-	# the listener thread will handle the result
-	result: List[Entry]=search_result_queue.get(timeout=1)
+	result: List[Entry] = message.func.search(text)
 	dialog.matches.setRowCount(len(result))
 	for row, entry in enumerate(result):
 		dialog.set_row_data(row, entry)
 
 dialog.description.textChanged.connect(description_search_changed)
 
+message.start()
 
 returncode=app.exec_()
 assert returncode==0
