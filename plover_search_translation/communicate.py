@@ -1,6 +1,8 @@
 #!/bin/python
 """
 Run in the parent process. Handle the part related to the GUI and signals, but not related to the logic.
+
+The parts related to the logic is handled in .manager.
 """
 
 import sys
