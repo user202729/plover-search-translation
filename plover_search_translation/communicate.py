@@ -20,7 +20,6 @@ class Process:
 	"""
 
 	def __init__(self)->None:
-		self._window_closed_queue: Queue=Queue()
 		self._message: Message=Message(
 				subprocess.Popen([sys.executable, "-m", "plover_search_translation.process"],
 					stdin=subprocess.PIPE,
@@ -29,7 +28,6 @@ class Process:
 				)
 
 		self._message.call.show_error=lambda message: self.show_error(message)
-		self._message.call.window_closed=lambda: self._window_closed_queue.put(None)
 		self._message.call.add_translation=lambda entry: self.on_add(entry)
 		self._message.call.remove_translation=lambda entry: self.on_remove(entry)
 		self._message.call.picked=lambda entry: self.on_pick(entry)
@@ -45,9 +43,7 @@ class Process:
 		"""
 		Close the currently-opening window (only return when the window is closed).
 		"""
-		assert self._window_closed_queue.empty()
-		self._message.call.close_window()
-		self._window_closed_queue.get(timeout=1)
+		self._message.func.close_window()
 
 	def exit(self)->None:
 		self._message.stop()

@@ -80,11 +80,11 @@ def open_dialog(normal_window: bool=True)->None:
 	if not normal_window:
 		dialog.activateWindow()
 
-@message.register_call
+@message.register_func_with_callback
 @execute_on_main_thread
-def close_window()->None:
+def close_window(callback, args, kwargs)->None:
 	dialog.hide()
-	message.call.window_closed()
+	callback(None)
 
 
 def rejected()->None:
