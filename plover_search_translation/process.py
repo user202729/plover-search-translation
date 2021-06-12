@@ -43,10 +43,6 @@ app=QApplication([])
 app.setQuitOnLastWindowClosed(False)
 dialog=SearchTranslationDialog()
 
-from queue import Queue
-
-search_result_queue: Queue[List[Entry]]=Queue(maxsize=1)
-
 message=Message()
 
 @execute_on_main_thread
