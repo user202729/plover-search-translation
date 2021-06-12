@@ -64,6 +64,7 @@ def set_description_text(new_text: str)->None:
 	disable_description_change_hook=False
 
 
+@message.register_call
 @execute_on_main_thread
 def open_dialog(normal_window: bool=True)->None:
 	assert not dialog.isVisible()
@@ -79,14 +80,11 @@ def open_dialog(normal_window: bool=True)->None:
 	if not normal_window:
 		dialog.activateWindow()
 
+@message.register_call
 @execute_on_main_thread
 def close_window()->None:
 	dialog.hide()
 	message.call.window_closed()
-
-message.call.open_dialog = open_dialog
-
-message.call.close_window = close_window
 
 
 def rejected()->None:

@@ -26,7 +26,7 @@ class Process:
 					)
 				)
 
-		self._message.call.show_error=self.show_error
+		self._message.call.show_error=lambda message: self.show_error(message)
 		self._message.call.window_closed=lambda: self._window_closed_queue.put(None)
 		self._message.call.add_translation=lambda entry: self.on_add(entry)
 		self._message.call.remove_translation=lambda entry: self.on_remove(entry)
