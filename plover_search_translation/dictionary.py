@@ -42,6 +42,11 @@ class Dictionary(StenoDictionary):
 		
 		self.search_stroke: str=""
 		self.accept_stroke: str=""
+		self.pick_on_write: bool=False
+		"""
+		Whether to pick an entry (and close the window immediately)
+		when the window is open and the user write an outline in the current_dictionary.
+		"""
 		self.entries: List[Entry]=[]
 		self.lock: Lock=Lock()
 		"""
@@ -74,7 +79,7 @@ class Dictionary(StenoDictionary):
 
 		result=self._dict[key]  # might raise KeyError
 		assert result is not None
-		if manager.instance and manager.instance.is_showing(self):
+		if self.pick_on_write and manager.instance and manager.instance.is_showing(self):
 			result="{:command:plover_search_translation_close_window}"+result
 			# (must close the window before sending the commands)
 		return result
@@ -167,6 +172,8 @@ class Dictionary(StenoDictionary):
 			data=json.load(f)
 		self.search_stroke=data["search_stroke"]
 		self.accept_stroke=data["accept_stroke"]
+		if "pick_on_write" in data:
+			self.pick_on_write=data["pick_on_write"]
 
 		self.entries=[]
 		self._longest_key=1
@@ -195,6 +202,7 @@ class Dictionary(StenoDictionary):
 			f.write('{\n'
 					'"search_stroke": ' + json.dumps(self.search_stroke) + ',\n'
 					'"accept_stroke": ' + json.dumps(self.accept_stroke) + ',\n'
+					'"pick_on_write": ' + json.dumps(self.pick_on_write) + ',\n'
 					'"entries": [\n' +
 					",\n".join(
 						json.dumps(entry.tuple(), ensure_ascii=False) for entry in self.entries
