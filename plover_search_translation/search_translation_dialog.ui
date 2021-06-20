@@ -88,7 +88,7 @@
    </item>
    <item row="0" column="0">
     <layout class="QFormLayout" name="formLayout">
-     <item row="0" column="0">
+     <item row="2" column="0">
       <widget class="QLabel" name="outputLabel">
        <property name="text">
         <string>&amp;Output:</string>
@@ -101,10 +101,10 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="1">
+     <item row="2" column="1">
       <widget class="QLineEdit" name="output"/>
      </item>
-     <item row="1" column="0">
+     <item row="0" column="0">
       <widget class="QLabel" name="descriptionLabel">
        <property name="text">
         <string>Des&amp;cription:</string>
@@ -114,10 +114,10 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="1">
+     <item row="0" column="1">
       <widget class="QLineEdit" name="description"/>
      </item>
-     <item row="2" column="0">
+     <item row="1" column="0">
       <widget class="QLabel" name="briefLabel">
        <property name="text">
         <string>&amp;Brief:</string>
@@ -127,7 +127,7 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="1">
+     <item row="1" column="1">
       <widget class="QLineEdit" name="brief"/>
      </item>
     </layout>
@@ -149,13 +149,13 @@
  </widget>
  <tabstops>
   <tabstop>description</tabstop>
-  <tabstop>output</tabstop>
   <tabstop>brief</tabstop>
+  <tabstop>output</tabstop>
+  <tabstop>matches</tabstop>
   <tabstop>pickButton</tabstop>
   <tabstop>addButton</tabstop>
   <tabstop>editButton</tabstop>
   <tabstop>deleteButton</tabstop>
-  <tabstop>matches</tabstop>
  </tabstops>
  <resources/>
  <connections/>
