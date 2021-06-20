@@ -9,7 +9,7 @@ import sys
 import subprocess
 from threading import Thread, Lock
 from queue import Queue
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from subprocess_connection import Message
 
@@ -34,6 +34,7 @@ class Process:
 		self._message.call.picked=lambda entry: self.on_pick(entry)
 
 		self._message.func.search=lambda query: self.on_search(query)
+		self._message.func.lookup=lambda outline: self.lookup(outline)
 
 		self._message.start()
 
@@ -68,6 +69,9 @@ class Process:
 	def on_search(self, query: str)->List[Entry]:
 		raise NotImplementedError
 
+	def lookup(self, outline: Tuple[str, ...])->Optional[str]:
+		raise NotImplementedError
+
 
 
 
@@ -86,7 +90,10 @@ if __name__=="__main__":
 				Entry("a", "b", ("c", "d")),
 				Entry("e", "f", ("g", "h")),
 				]
+	def lookup(outline: Tuple[str, ...])->Optional[str]:
+		return None
 	process.on_search=on_search  # type: ignore
+	process.lookup=lookup  # type: ignore
 
 	process.open_dialog()
 

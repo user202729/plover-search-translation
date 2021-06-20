@@ -17,6 +17,8 @@ import time
 from PyQt5.QtCore import Qt  # type: ignore
 from PyQt5.QtWidgets import QApplication  # type: ignore
 
+import html
+
 from subprocess_connection import Message
 
 from .lib import Entry
@@ -99,6 +101,7 @@ def open_dialog(normal_window: bool=True)->None:
 	dialog.description.setFocus()
 	set_description_text("")
 	dialog.brief.setText("")
+	dialog.briefConflictLabel.setText("")
 	dialog.matches.setRowCount(0)
 	dialog.show()
 	if not normal_window:
@@ -236,7 +239,22 @@ def description_search_changed(text: str)->None:
 	for row, entry in enumerate(result):
 		dialog.set_row_data(row, entry)
 
+def brief_changed(text: str)->None:
+	outline=text_to_outline(text)
+	if not outline:
+		text=""
+	else:
+		outline_str=html.escape("/".join(outline))
+		result=message.func.lookup(outline)
+		if result is None:
+			text=f'<b><code>{outline_str}</code></b> is not mapped in any dictionary'
+		else:
+			result=html.escape(result)
+			text=f'<b><code>{outline_str}</code></b> maps to <b><code>{result}</code></b>'
+	dialog.briefConflictLabel.setText(text)
+
 dialog.description.textChanged.connect(description_search_changed)
+dialog.brief.textChanged.connect(brief_changed)
 
 message.start(on_stop=lambda: app.exit(0))
 

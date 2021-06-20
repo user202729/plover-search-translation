@@ -7,10 +7,11 @@ and also Plover's extension plugin entry point.
 
 from __future__ import annotations
 
+import traceback
 import typing
 if typing.TYPE_CHECKING:
 	from plover.engine import StenoEngine  # type: ignore
-	from typing import Optional, List, Dict, Union
+	from typing import Optional, List, Dict, Union, Tuple
 	from .lib import Entry
 	from .dictionary import Dictionary
 
@@ -36,6 +37,7 @@ class Manager:
 		self._process.on_add=self.on_add
 		self._process.on_remove=self.on_remove
 		self._process.on_search=self.on_search
+		self._process.lookup=self.lookup
 		self._process.show_error=self.show_error
 
 		self._dictionary=None
@@ -93,7 +95,6 @@ class Manager:
 				#self._engine._trigger_hook('stroked', stroke)
 
 		except:
-			import traceback
 			traceback.print_exc()
 
 	def on_add(self, entry: Entry)->None:
@@ -109,6 +110,15 @@ class Manager:
 	def on_search(self, query: str)->List[Entry]:
 		assert self._dictionary is not None
 		return self._dictionary.search(query)
+
+	def lookup(self, outline: Tuple[str, ...])->Optional[str]:
+		assert outline
+		try:
+			return self._engine.dictionaries.raw_lookup(outline)
+		except:
+			print(">>", outline)
+			traceback.print_exc()
+			return None
 
 	def close_window(self)->None:
 		assert self._process
