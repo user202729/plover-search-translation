@@ -9,7 +9,7 @@ import sys
 import subprocess
 from threading import Thread, Lock
 from queue import Queue
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Any
 
 from subprocess_connection import Message
 
@@ -35,6 +35,9 @@ class Process:
 
 		self._message.func.search=lambda query: self.on_search(query)
 		self._message.func.lookup=lambda outline: self.lookup(outline)
+
+		self._message.call.save_column_width=lambda value: self.save_column_width(value)
+		self._message.func.get_column_width=lambda: self.get_column_width()
 
 		self._message.start()
 
@@ -72,6 +75,12 @@ class Process:
 	def lookup(self, outline: Tuple[str, ...])->Optional[str]:
 		raise NotImplementedError
 
+	def save_column_width(self, value: Any)->None:
+		raise NotImplementedError
+
+	def get_column_width(self)->Any:
+		raise NotImplementedError
+
 
 
 
@@ -94,6 +103,9 @@ if __name__=="__main__":
 		return None
 	process.on_search=on_search  # type: ignore
 	process.lookup=lookup  # type: ignore
+
+	process.get_column_width=lambda: None  # type: ignore
+	process.save_column_width=lambda value: None  # type: ignore
 
 	process.open_dialog()
 

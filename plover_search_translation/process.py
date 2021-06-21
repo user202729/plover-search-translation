@@ -88,6 +88,31 @@ def set_description_text(new_text: str)->None:
 	set_state(old_state)
 
 
+from pathlib import Path
+import json
+column_width_save_path=Path("/tmp/Plover-search-translation-column-width-values.json")
+
+def saved_column_width_values()->Optional[List[int]]:
+	return message.func.get_column_width()
+
+def save_column_width()->None:
+	horizontal_header=dialog.matches.horizontalHeader()
+	n=horizontal_header.count()
+	message.call.save_column_width(
+			[horizontal_header.sectionSize(index) for index in range(n-1)]
+			)
+
+def load_column_width()->None:
+	horizontal_header=dialog.matches.horizontalHeader()
+	n=horizontal_header.count()
+	values=saved_column_width_values()
+	if values is None: return
+	for index in range(n-1):
+		dialog.matches.horizontalHeader().resizeSection(
+				index,
+				values[index]
+				)
+
 @message.register_call
 @execute_on_main_thread
 def open_dialog(normal_window: bool=True)->None:
@@ -106,18 +131,21 @@ def open_dialog(normal_window: bool=True)->None:
 	dialog.show()
 	if not normal_window:
 		dialog.activateWindow()
+	load_column_width()
 
 @message.register_func_with_callback
 @execute_on_main_thread
 def close_window(callback, args, kwargs)->None:
 	dialog.hide()
 	assert state is WINDOW_OPEN or isinstance(state, Editing)
+	save_column_width()
 	set_state(WINDOW_CLOSED)
 	callback(None)
 	time.sleep(0.05)  # some window manager might have problems without this
 
 def rejected()->None:
 	assert state is WINDOW_OPEN or isinstance(state, Editing)
+	save_column_width()
 	set_state(WINDOW_CLOSED)
 	message.call.picked(None)
 
@@ -175,6 +203,7 @@ def pick()->None:
 		return
 
 	assert state is WINDOW_OPEN, state
+	save_column_width()
 	set_state(WINDOW_CLOSED)
 
 	dialog.hide()

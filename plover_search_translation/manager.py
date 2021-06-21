@@ -11,7 +11,7 @@ import traceback
 import typing
 if typing.TYPE_CHECKING:
 	from plover.engine import StenoEngine  # type: ignore
-	from typing import Optional, List, Dict, Union, Tuple
+	from typing import Optional, List, Dict, Union, Tuple, Any
 	from .lib import Entry
 	from .dictionary import Dictionary
 
@@ -26,6 +26,15 @@ class Manager:
 		self._process: Optional[Process]=None
 		self._dictionary: Optional[Dictionary]=None
 
+		from plover import config  # type: ignore
+		config.Config._OPTIONS["plover_search_translation_column_width"]=config.json_option(
+			"plover_search_translation_column_width",
+			lambda config, key: None,
+			"Plugin: Search Translation",
+			"column_width",
+			lambda config, key, value: value
+			)
+
 	def start(self):
 		"""
 		Called when Plover starts (or the extension plugin is enabled)
@@ -39,6 +48,9 @@ class Manager:
 		self._process.on_search=self.on_search
 		self._process.lookup=self.lookup
 		self._process.show_error=self.show_error
+
+		self._process.get_column_width=self.get_column_width
+		self._process.save_column_width=self.save_column_width
 
 		self._dictionary=None
 
@@ -58,6 +70,11 @@ class Manager:
 		self._process.exit()
 		self._process=None
 
+	def save_column_width(self, value: Any)->None:
+		self._engine["plover_search_translation_column_width"]=value
+
+	def get_column_width(self)->Any:
+		return self._engine["plover_search_translation_column_width"]
 
 	def show_error(self, message: str)->None:
 		from plover import log  # type: ignore
