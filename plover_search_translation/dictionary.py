@@ -4,12 +4,14 @@ Dictionary entry point for Plover.
 
 import sys
 import json
-from typing import Tuple, Dict, List, Optional, TypeVar, Callable, Any
+from typing import Tuple, Dict, List, Optional, TypeVar, Callable, Any, Set, Iterable
 import typing
 from subprocess import Popen
 import subprocess
 from threading import Lock, Thread
 import functools
+import re
+import math
 
 from plover.steno_dictionary import StenoDictionary  # type: ignore
 
@@ -31,6 +33,67 @@ def with_lock(function: T)->T:
 		finally:
 			self.lock.release()
 	return typing.cast(T, result)  # TODO?
+
+
+WORD_RX=re.compile(r"\w+|\S")
+
+
+def split_words(s: str)->List[str]:
+	return WORD_RX.findall(s)
+
+
+def ngrams(s: str, n: int)->Iterable[str]:
+	"""
+	Return all n-grams in the string.
+	"""
+	for i in range(len(s)-n+1):
+		yield s[i:i+n]
+
+
+def ngrams_padded(s: str, n: int)->Iterable[str]:
+	return ngrams(' '+s+' ', n)
+
+
+def edit_distance_mod(query: str, a: str)->int:
+	"""
+	Implement an algorithm similar to edit distance to compare string similarity.
+	"""
+	# missing in query (extra in description): cost 1
+	# missing in description (extra in query): cost 3
+	f=[*range(len(a)+1)]
+	for j, c in enumerate(query):
+		# currently f[i] is the distance between query (characters strictly before c) and a[:i]
+		g=[0]*len(f)
+		g[0]=f[0]+3
+		for i in range(1, len(f)):
+			g[i]=min(
+					f[i]+3,
+					g[i-1]+1
+					)
+			if c==a[i-1]:
+				g[i]=min(g[i], f[i-1]-(
+					# heuristic: better score for consecutive matches
+					i and j and a[i-2]==query[j-1]))
+		f=g
+		# currently f[i] is the distance between query (characters strictly before c) + c and a[:i]
+	return f[-1]  # (might be positive or negative because of the heuristic above)
+
+
+def match_score(query: str, entry: Entry)->Any: # comparable, larger is better
+	"""
+	Return the match score for searching.
+	"""
+	# quickly filter out unlikely entries first for performance
+	if query==entry.translation or query==entry.description:
+		return math.inf
+	if not {*ngrams_padded(query, 4)}&{
+			*ngrams_padded(entry.translation, 4),
+			*ngrams_padded(entry.description, 4),
+			}:
+		return -math.inf
+
+	return -edit_distance_mod(query, entry.translation+' '+entry.description)
+	# smaller edit distance is better
 
 
 class Dictionary(StenoDictionary):
@@ -227,8 +290,9 @@ class Dictionary(StenoDictionary):
 		Internal method, does not lock.
 		"""
 		return sorted(
-				[entry for entry in self.entries if query in entry.description],
-				key=lambda entry: len(entry.description))[:20]
+				self.entries,
+				key=lambda entry: match_score(query, entry),
+				reverse=True)[:20]
 
 	@with_lock
 	def search(self, query: str)->List[Entry]:
