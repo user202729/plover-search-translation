@@ -70,7 +70,7 @@ class Dictionary(StenoDictionary):
 		if key==(self.search_stroke,):
 			manager.get().ensure_active_dictionary(self)
 			return (
-					"{:command:plover_search_translation_show_dialog:" +
+					"{:command:plover_search_translation_open_dialog:" +
 					self.path.translate({
 						ord("{"): r"\{",
 						ord("}"): r"\}",

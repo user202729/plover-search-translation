@@ -143,7 +143,7 @@ class Manager:
 		self._process.close_dialog()
 		self._dictionary=None
 
-	def show(self, dictionary: Union[str, Dictionary])->None:
+	def open_dialog(self, dictionary: Union[str, Dictionary])->None:
 		if self._dictionary is not None:
 			raise RuntimeError(f"Another search dialog is visible -- {self._dictionary.path}")
 		self._dictionary=(
