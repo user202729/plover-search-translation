@@ -1,4 +1,6 @@
 import functools
+import time
+import threading
 import typing
 from typing import Tuple, Dict, List, Optional, TypeVar, Callable, Sequence, Any
 from dataclasses import dataclass
@@ -49,3 +51,43 @@ class Entry:  # field order is important
 				description=data[1],
 				brief=tuple(data[2])
 				)
+
+
+def throttle(seconds: float)->Callable[[T], T]:
+	"""
+	Wait for <seconds> seconds, collect all the function calls, then only call the last function.
+
+	The delay is only approximate, may be longer if the actual function call takes a long time.
+
+	Example:
+
+	Time                    ---------------------------------------------> (s)
+	Wrapped function call:    * *          *  * * ***     * *              ('*' = 1 call)
+	Actual function call:     .......#     .......#.......#.......#        ('#' = 1 call)
+	                          \______/
+	                             |_______ ==  delay time
+	"""
+
+	def result(function: T)->T:
+		thread=None
+		function_args, function_kwargs=None, None
+		lock=threading.Lock()  # should be locked when the function is called or when any of the variables above is modified
+
+		def target(*args, **kwargs):
+			nonlocal thread
+			time.sleep(seconds)
+			with lock:
+				thread=None
+				function(*function_args, **function_kwargs)
+
+		@functools.wraps(function)
+		def wrapped(*args, **kwargs)->Any:
+			nonlocal thread, function_args, function_kwargs
+			with lock:
+				function_args, function_kwargs=args, kwargs
+				if thread is None:
+					thread=threading.Timer(seconds, target)
+					thread.start()
+
+		return typing.cast(T, wrapped)
+	return result

@@ -21,7 +21,7 @@ import html
 
 from subprocess_connection import Message
 
-from .lib import Entry
+from .lib import Entry, throttle
 from .gui import SearchTranslationDialog
 
 from PyQt5.QtCore import pyqtSignal, QVariant, QObject
@@ -250,6 +250,8 @@ def delete_translation()->None:
 
 dialog.deleteButton.clicked.connect(delete_translation)
 
+@throttle(0.05)
+@execute_on_main_thread
 def description_search_changed(text: str)->None:
 	if state is PROGRAMMATICALLY_EDITING_DESCRIPTION or isinstance(state, Editing):
 		return
