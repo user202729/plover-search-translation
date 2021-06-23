@@ -115,13 +115,10 @@ def load_column_width()->None:
 
 @message.register_call
 @execute_on_main_thread
-def open_dialog(normal_window: bool=True)->None:
+def open_dialog()->None:
 	assert not dialog.isVisible()
 	assert state is WINDOW_CLOSED, state
 	set_state(WINDOW_OPEN)
-	if not normal_window:
-		dialog.setWindowFlag(Qt.FramelessWindowHint)
-		dialog.setWindowFlag(Qt.BypassWindowManagerHint)
 	dialog.output.setText("")
 	dialog.description.setFocus()
 	set_description_text("")
@@ -129,8 +126,6 @@ def open_dialog(normal_window: bool=True)->None:
 	dialog.briefConflictLabel.setText("")
 	dialog.matches.setRowCount(0)
 	dialog.show()
-	if not normal_window:
-		dialog.activateWindow()
 	load_column_width()
 
 @message.register_func_with_callback
