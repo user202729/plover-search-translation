@@ -4,7 +4,7 @@ Dictionary entry point for Plover.
 
 import sys
 import json
-from typing import Tuple, Dict, List, Optional, TypeVar, Callable, Any, Set, Iterable
+from typing import Tuple, Dict, List, Optional, TypeVar, Callable, Any, Set, Iterable, Mapping
 import typing
 from subprocess import Popen
 import subprocess
@@ -116,6 +116,10 @@ class Dictionary(StenoDictionary):
 		A lock to ensure that there's no race condition when the dictionary is accessed
 		or modified.
 		"""
+		self.dict: Dict[Outline, Entry]={}
+		"""
+		Dictionary that maps from the brief to the entry object.
+		"""
 
 		self._longest_key=1
 
@@ -140,8 +144,7 @@ class Dictionary(StenoDictionary):
 						}) +
 					"}{^}")
 
-		result=self._dict[key]  # might raise KeyError
-		assert result is not None
+		result=self.dict[key].translation  # might raise KeyError
 		if self.pick_on_write and manager.instance and manager.instance.is_showing(self):
 			result="{:command:plover_search_translation_close_dialog}"+result
 			# (must close the dialog before sending the commands)
@@ -173,21 +176,72 @@ class Dictionary(StenoDictionary):
 		"""
 		return self.get(key) is not None
 
-	def _error_on_edit(self)->None:
-		raise RuntimeError("Editing the dictionary is not supported. Use the plugin's editing tools instead.")
+	def _delitem(self, key: Outline)->None:
+		"""
+		Internal method. Does not lock.
 
-	def __setitem__(self, key, value)->None:
-		self._error_on_edit()
+		Compatible method for Plover dictionaries. ``add`` and ``remove`` has more functionalities.
+		"""
+		entry=self.dict[key]  # might raise KeyError
+		self._remove(entry)
 
-	def __delitem__(self, key)->None:
-		self._error_on_edit()
+	def _setitem(self, key: Outline, value: str)->None:
+		"""
+		Internal method. Does not lock.
 
+		Compatible method for Plover dictionaries. ``add`` and ``remove`` has more functionalities.
+
+		This method tries to preserve the description of the entry.
+		(however the description is still removed if the entry is edited through Plover dictionary editor)
+		Same issue as plover_excel_dictionary.
+		"""
+		assert key
+		if key in self.dict:
+			entry=self.dict[key]
+			self._remove(entry)
+			description=entry.description
+		else:
+			description=""
+		self._add(Entry(description=description, translation=value, brief=key))
+
+	def __iter__(self)->Iterable[Tuple[Outline, str]]:
+		"""
+		Compatible method for Plover dictionaries.
+		"""
+		for key, entry in self.dict.items():
+			yield key, entry.translation
+
+	def items(self)->Iterable[Tuple[Outline, str]]:
+		"""
+		Compatible method for Plover dictionaries.
+		"""
+		return iter(self)
+
+	def __len__(self)->int:
+		return len(self.dict)
+
+	@with_lock
+	def __setitem__(self, key: Outline, value: str)->None:
+		self._setitem(key, value)
+
+	@with_lock
+	def __delitem__(self, key: Outline)->None:
+		self._delitem(key)
+
+	@with_lock
 	def update(self, *args, **kwargs)->None:
-		self._error_on_edit()
+		for d in args:
+			for key, value in (d.items() if hasattr(d, "items") else d):
+				self._setitem(key, value)
+		for key, value in kwargs.items():
+			self._setitem(key, value)
 
+	@with_lock
 	def clear(self)->None:
-		self._error_on_edit()
-
+		"""
+		Clear the dictionary. ``search_stroke`` remains.
+		"""
+		self.entries=[]
 
 	def _add(self, entry: Entry)->None:
 		"""
@@ -195,8 +249,8 @@ class Dictionary(StenoDictionary):
 		"""
 		if entry.brief:
 			assert entry.brief!=(self.search_stroke,)
-			assert entry.brief not in self._dict
-			self._dict[entry.brief]=entry.translation
+			assert entry.brief not in self.dict
+			self.dict[entry.brief]=entry
 			if self._longest_key<len(entry.brief): self._longest_key=len(entry.brief)
 		self.entries.append(entry)
 
@@ -206,8 +260,8 @@ class Dictionary(StenoDictionary):
 		"""
 		if entry.brief:
 			assert entry.brief!=(self.search_stroke,)
-			assert self._dict[entry.brief]==entry.translation
-			del self._dict[entry.brief]
+			assert self.dict[entry.brief]==entry
+			del self.dict[entry.brief]
 			if self._longest_key==entry.brief:
 				self._longest_key=max(len(outline) for outline in self.dict)
 		old_length=len(self.entries)
@@ -227,6 +281,9 @@ class Dictionary(StenoDictionary):
 	def remove(self, entry: Entry)->None:
 		"""
 		Remove an entry from the dictionary.
+
+		(entry does only need to be equal in value to some existing entry, otherwise
+		AssertionError is raised)
 		"""
 		self._remove(entry)
 
