@@ -44,11 +44,11 @@ class Process:
 	def open_dialog(self)->None:
 		self._message.call.open_dialog()
 
-	def close_window(self)->None:
+	def close_dialog(self)->None:
 		"""
-		Close the currently-opening window (only return when the window is closed).
+		Close the currently-opening dialog (only return when the dialog is closed).
 		"""
-		self._message.func.close_window()
+		self._message.func.close_dialog()
 
 	def exit(self)->None:
 		self._message.stop()

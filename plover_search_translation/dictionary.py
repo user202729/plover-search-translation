@@ -44,8 +44,8 @@ class Dictionary(StenoDictionary):
 		self.accept_stroke: str=""
 		self.pick_on_write: bool=False
 		"""
-		Whether to pick an entry (and close the window immediately)
-		when the window is open and the user write an outline in the current_dictionary.
+		Whether to pick an entry (and close the dialog immediately)
+		when the dialog is open and the user write an outline in the current_dictionary.
 		"""
 		self.entries: List[Entry]=[]
 		self.lock: Lock=Lock()
@@ -65,7 +65,7 @@ class Dictionary(StenoDictionary):
 		"""
 		Lookup an item by its brief (outline).
 
-		Also return the command to close the window if it's opening.
+		Also return the command to close the dialog if it's opening.
 		"""
 		if key==(self.search_stroke,):
 			manager.get().ensure_active_dictionary(self)
@@ -80,8 +80,8 @@ class Dictionary(StenoDictionary):
 		result=self._dict[key]  # might raise KeyError
 		assert result is not None
 		if self.pick_on_write and manager.instance and manager.instance.is_showing(self):
-			result="{:command:plover_search_translation_close_window}"+result
-			# (must close the window before sending the commands)
+			result="{:command:plover_search_translation_close_dialog}"+result
+			# (must close the dialog before sending the commands)
 		return result
 
 	@with_lock

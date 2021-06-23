@@ -130,7 +130,7 @@ def open_dialog()->None:
 
 @message.register_func_with_callback
 @execute_on_main_thread
-def close_window(callback, args, kwargs)->None:
+def close_dialog(callback, args, kwargs)->None:
 	dialog.hide()
 	assert state is WINDOW_OPEN or isinstance(state, Editing)
 	save_column_width()
@@ -254,7 +254,7 @@ def description_search_changed(text: str)->None:
 	if state is PROGRAMMATICALLY_EDITING_DESCRIPTION or isinstance(state, Editing):
 		return
 	if state is WINDOW_CLOSED:
-		# this might happen if the description text is modified right before the window is closed
+		# this might happen if the description text is modified right before the dialog is closed
 		return
 	assert state is WINDOW_OPEN, state
 
