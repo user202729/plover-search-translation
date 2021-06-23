@@ -17,7 +17,7 @@ if typing.TYPE_CHECKING:
 
 from .communicate import Process
 
-from .lib import with_print_exception
+from .lib import with_print_exception, Outline
 
 
 class Manager:
@@ -128,7 +128,7 @@ class Manager:
 		assert self._dictionary is not None
 		return self._dictionary.search(query)
 
-	def lookup(self, outline: Tuple[str, ...])->Optional[str]:
+	def lookup(self, outline: Outline)->Optional[str]:
 		assert outline
 		try:
 			return self._engine.dictionaries.raw_lookup(outline)

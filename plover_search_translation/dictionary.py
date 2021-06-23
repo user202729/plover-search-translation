@@ -16,7 +16,7 @@ import math
 from plover.steno_dictionary import StenoDictionary  # type: ignore
 
 from . import manager
-from .lib import Entry, with_print_exception
+from .lib import Entry, with_print_exception, Outline
 
 
 current_dictionary: Optional["Dictionary"]=None
@@ -124,7 +124,7 @@ class Dictionary(StenoDictionary):
 		if manager.instance and manager.instance.is_showing(self):
 			print("weird?")
 
-	def _getitem(self, key: Tuple[str, ...])->str:
+	def _getitem(self, key: Outline)->str:
 		"""
 		Lookup an item by its brief (outline).
 
@@ -148,13 +148,13 @@ class Dictionary(StenoDictionary):
 		return result
 
 	@with_lock
-	def __getitem__(self, key: Tuple[str, ...])->str:
+	def __getitem__(self, key: Outline)->str:
 		"""
 		Like `_getitem`, but locked.
 		"""
 		return self._getitem(key)
 
-	def get(self, key: Tuple[str, ...], default: Optional[str]=None)->Optional[str]:
+	def get(self, key: Outline, default: Optional[str]=None)->Optional[str]:
 		"""
 		Lookup an item by its brief (outline).
 

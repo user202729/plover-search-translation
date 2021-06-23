@@ -8,6 +8,8 @@ from pathlib import Path
 import tempfile
 import json
 
+Outline=Tuple[str, ...]
+
 T=TypeVar("T", bound=Callable)
 
 def with_print_exception(function: T)->T:
@@ -24,7 +26,7 @@ def with_print_exception(function: T)->T:
 			log.error(traceback.format_exc())
 	return typing.cast(T, result)  # TODO?
 
-def text_to_outline(s: str)->Tuple[str, ...]:
+def text_to_outline(s: str)->Outline:
 	return tuple(s.replace('/', ' ').split())
 
 
@@ -32,7 +34,7 @@ def text_to_outline(s: str)->Tuple[str, ...]:
 class Entry:  # field order is important
 	translation: str
 	description: str
-	brief: Tuple[str, ...]
+	brief: Outline
 
 	def valid(self)->bool:
 		return bool(self.description and self.translation)
@@ -40,7 +42,7 @@ class Entry:  # field order is important
 	def __str__(self)->str:
 		return f"({self.brief} -> {self.translation} | {self.description})"
 
-	def tuple(self)->Tuple[str, str, Tuple[str, ...]]:
+	def tuple(self)->Tuple[str, str, Outline]:
 		return (self.translation, self.description, self.brief)
 
 	@staticmethod

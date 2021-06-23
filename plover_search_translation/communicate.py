@@ -13,7 +13,7 @@ from typing import List, Optional, Tuple, Any
 
 from subprocess_connection import Message
 
-from plover_search_translation.lib import Entry
+from plover_search_translation.lib import Entry, Outline
 
 class Process:
 	"""
@@ -72,7 +72,7 @@ class Process:
 	def on_search(self, query: str)->List[Entry]:
 		raise NotImplementedError
 
-	def lookup(self, outline: Tuple[str, ...])->Optional[str]:
+	def lookup(self, outline: Outline)->Optional[str]:
 		raise NotImplementedError
 
 	def save_column_width(self, value: Any)->None:
@@ -99,7 +99,7 @@ if __name__=="__main__":
 				Entry("a", "b", ("c", "d")),
 				Entry("e", "f", ("g", "h")),
 				]
-	def lookup(outline: Tuple[str, ...])->Optional[str]:
+	def lookup(outline: Outline)->Optional[str]:
 		return None
 	process.on_search=on_search  # type: ignore
 	process.lookup=lookup  # type: ignore
