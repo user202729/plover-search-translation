@@ -252,6 +252,14 @@ dialog.deleteButton.clicked.connect(delete_translation)
 
 @throttle(0.05)
 @execute_on_main_thread
+def repopulate_matches(query: str)->None:
+	if state is WINDOW_CLOSED:
+		return
+	result: List[Entry] = message.func.search(query)
+	dialog.matches.setRowCount(len(result))
+	for row, entry in enumerate(result):
+		dialog.set_row_data(row, entry)
+
 def description_search_changed(text: str)->None:
 	if state is PROGRAMMATICALLY_EDITING_DESCRIPTION or isinstance(state, Editing):
 		return
@@ -259,11 +267,7 @@ def description_search_changed(text: str)->None:
 		# this might happen if the description text is modified right before the dialog is closed
 		return
 	assert state is WINDOW_OPEN, state
-
-	result: List[Entry] = message.func.search(text)
-	dialog.matches.setRowCount(len(result))
-	for row, entry in enumerate(result):
-		dialog.set_row_data(row, entry)
+	repopulate_matches(text)
 
 def brief_changed(text: str)->None:
 	outline=text_to_outline(text)
