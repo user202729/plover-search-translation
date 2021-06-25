@@ -355,6 +355,8 @@ class Dictionary(StenoDictionary):
 
 		Internal method, does not lock.
 		"""
+		if query=="":
+			return self.entries[:100]
 		return sorted(
 				self.entries,
 				key=lambda entry: match_score(query, entry),

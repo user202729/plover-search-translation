@@ -130,6 +130,7 @@ def open_dialog()->None:
 	dialog.brief.setText("")
 	dialog.briefConflictLabel.setText("")
 	dialog.matches.setRowCount(0)
+	repopulate_matches("")
 	dialog.show()
 	load_column_width()
 
@@ -255,15 +256,22 @@ def delete_translation()->None:
 
 dialog.deleteButton.clicked.connect(delete_translation)
 
-@throttle(0.05)
-@execute_on_main_thread
 def repopulate_matches(query: str)->None:
+	"""
+	Fill the matches table with the matches from the dictionary.
+	Must be called from the main thread.
+	"""
 	if state is WINDOW_CLOSED:
 		return
 	result: List[Entry] = message.func.search(query)
 	dialog.matches.setRowCount(len(result))
 	for row, entry in enumerate(result):
 		dialog.set_row_data(row, entry)
+
+@throttle(0.05)
+@execute_on_main_thread
+def repopulate_matches_delayed(query: str)->None:
+	repopulate_matches(query)
 
 def description_search_changed(text: str)->None:
 	if state is PROGRAMMATICALLY_EDITING_DESCRIPTION or isinstance(state, Editing):
@@ -272,7 +280,7 @@ def description_search_changed(text: str)->None:
 		# this might happen if the description text is modified right before the dialog is closed
 		return
 	assert state is WINDOW_OPEN, state
-	repopulate_matches(text)
+	repopulate_matches_delayed(text)
 
 def brief_changed(text: str)->None:
 	outline=text_to_outline(text)
