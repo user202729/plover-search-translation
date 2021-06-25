@@ -81,6 +81,11 @@ def show_error(error: str)->None:
 	message.call.show_error(error)
 
 def set_description_text(new_text: str)->None:
+	"""
+	Set the text of the description text field without triggering repopulate_matches.
+
+	The logic is handled in description_search_changed.
+	"""
 	assert state is WINDOW_OPEN, state
 	old_state=state
 	set_state(PROGRAMMATICALLY_EDITING_DESCRIPTION)
