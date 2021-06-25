@@ -358,7 +358,7 @@ class Dictionary(StenoDictionary):
 		return sorted(
 				self.entries,
 				key=lambda entry: match_score(query, entry),
-				reverse=True)[:20]
+				reverse=True)[:100]
 
 	@with_lock
 	def search(self, query: str)->List[Entry]:
