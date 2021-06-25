@@ -299,17 +299,21 @@ class Dictionary(StenoDictionary):
 	def _load_nolock(self, filename: str)->None:
 		with open(filename, "r", encoding='u8') as f:
 			data=json.load(f)
-		self.search_stroke=data["search_stroke"]
-		self.accept_stroke=data["accept_stroke"]
-		if "pick_on_write" in data:
-			self.pick_on_write=data["pick_on_write"]
+		version=data.get("version", 1)
+		if version==1:
+			self.search_stroke=data["search_stroke"]
+			self.accept_stroke=data["accept_stroke"]
+			if "pick_on_write" in data:
+				self.pick_on_write=data["pick_on_write"]
 
-		self.entries=[]
-		self._longest_key=1
-		for x in data["entries"]:
-			entry=Entry.from_tuple(x)
-			self._add(entry)  # handle brief
-		assert self.longest_key>=1
+			self.entries=[]
+			self._longest_key=1
+			for x in data["entries"]:
+				entry=Entry.from_tuple(x)
+				self._add(entry)  # handle brief
+			assert self.longest_key>=1
+		else:
+			assert False, f"Unsupported dictionary version: {version}"
 
 	@with_lock
 	@with_print_exception
@@ -329,6 +333,7 @@ class Dictionary(StenoDictionary):
 			#json.dump(data, f,
 			#		indent=0, ensure_ascii=False)
 			f.write('{\n'
+					'"version": 1,\n'
 					'"search_stroke": ' + json.dumps(self.search_stroke) + ',\n'
 					'"accept_stroke": ' + json.dumps(self.accept_stroke) + ',\n'
 					'"pick_on_write": ' + json.dumps(self.pick_on_write) + ',\n'
