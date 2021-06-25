@@ -79,13 +79,22 @@ def edit_distance_mod(query: str, a: str)->int:
 	return f[-1]  # (might be positive or negative because of the heuristic above)
 
 
-def match_score(query: str, entry: Entry)->Any: # comparable, larger is better
+def match_score(query: str, entry: Entry)->Any: # comparable (for the same value of query), larger is better
 	"""
 	Return the match score for searching.
 	"""
 	# quickly filter out unlikely entries first for performance
 	if query==entry.translation or query==entry.description:
 		return math.inf
+
+	if len(query)<=3:
+		if query in entry.description:
+			return 10000-len(entry.translation)-len(entry.description)
+		elif query in entry.translation:
+			return -len(entry.translation)-len(entry.description)
+		else:
+			return -math.inf
+
 	if not {*ngrams_padded(query, 4)}&{
 			*ngrams_padded(entry.translation, 4),
 			*ngrams_padded(entry.description, 4),
