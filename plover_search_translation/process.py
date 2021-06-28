@@ -169,6 +169,7 @@ def add_translation()->None:
 
 	if state is WINDOW_OPEN:
 		dialog.matches.insertRow(0)
+		dialog.refresh_all_vertical_header()
 		dialog.set_row_data(0, new_entry)
 		message.call.add_translation(new_entry)
 	else:
@@ -265,6 +266,7 @@ def repopulate_matches(query: str)->None:
 		return
 	result: List[Entry] = message.func.search(query)
 	dialog.matches.setRowCount(len(result))
+	dialog.refresh_all_vertical_header()
 	for row, entry in enumerate(result):
 		dialog.set_row_data(row, entry)
 

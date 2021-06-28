@@ -93,15 +93,19 @@ class SearchTranslationDialog(QDialog, Ui_SearchTranslationDialog):
 			return 0
 		return row
 
-	def set_row_data(self, row: int, entry: Entry)->None:
-		data=entry.tuple()
-
+	def refresh_vertical_header(self, row: int)->None:
 		item=self.matches.verticalHeaderItem(row)
 		if item is None:
 			item=QTableWidgetItem()
 			self.matches.setVerticalHeaderItem(row, item)
 		item.setText(str(row+1))
 
+	def refresh_all_vertical_header(self)->None:
+		for row in range(self.matches.rowCount()):
+			self.refresh_vertical_header(row)
+
+	def set_row_data(self, row: int, entry: Entry)->None:
+		data=entry.tuple()
 
 		for i in range(3):
 			item=self.matches.item(row, i)
