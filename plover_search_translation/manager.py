@@ -7,6 +7,8 @@ and also Plover's extension plugin entry point.
 
 from __future__ import annotations
 
+import sys
+import subprocess
 import traceback
 import typing
 if typing.TYPE_CHECKING:
@@ -15,15 +17,15 @@ if typing.TYPE_CHECKING:
 	from .lib import Entry
 	from .dictionary import Dictionary
 
-from .communicate import Process
+from subprocess_connection import Message
 
 from .lib import with_print_exception, Outline
 
 
 class Manager:
-	def __init__(self, engine: StenoEngine):
+	def __init__(self, engine: StenoEngine)->None:
 		self._engine: StenoEngine=engine
-		self._process: Optional[Process]=None
+		self._message: Optional[Message]=None
 		self._dictionary: Optional[Dictionary]=None
 
 		from plover import config  # type: ignore
@@ -35,22 +37,30 @@ class Manager:
 			lambda config, key, value: value
 			)
 
-	def start(self):
+	def start(self)->None:
 		"""
 		Called when Plover starts (or the extension plugin is enabled)
 		"""
-		assert self._process is None
-		self._process=Process()
+		assert self._message is None
+		self._message=Message(
+				subprocess.Popen([sys.executable, "-m", "plover_search_translation.process"],
+					stdin=subprocess.PIPE,
+					stdout=subprocess.PIPE,
+					)
+				)
 
-		self._process.on_pick=self.on_pick
-		self._process.on_add=self.on_add
-		self._process.on_remove=self.on_remove
-		self._process.on_search=self.on_search
-		self._process.lookup=self.lookup
-		self._process.show_error=self.show_error
+		self._message.register_call(self.show_error)
+		self._message.call.remove_translation=self.on_remove
+		self._message.call.picked=self.on_pick
 
-		self._process.get_column_width=self.get_column_width
-		self._process.save_column_width=self.save_column_width
+		self._message.func.add_translation=self.on_add
+		self._message.func.search=self.on_search
+		self._message.register_func(self.lookup)
+
+		self._message.register_call(self.save_column_width)
+		self._message.register_func(self.get_column_width)
+
+		self._message.start()
 
 		self._dictionary=None
 
@@ -61,14 +71,15 @@ class Manager:
 		assert self._engine.dictionaries[dictionary.path] is dictionary
 
 	@with_print_exception #if stop() fails then Plover will not exit...?
-	def stop(self):
+	def stop(self)->None:
 		"""
 		Called (from Plover) when Plover stops (or the extension plugin is disabled)
 		"""
 		global instance
 		instance=None
-		self._process.exit()
-		self._process=None
+		assert self._message
+		self._message.stop()
+		self._message=None
 
 	def save_column_width(self, value: Any)->None:
 		self._engine["plover_search_translation_column_width"]=value
@@ -140,9 +151,9 @@ class Manager:
 			return None
 
 	def close_dialog(self)->None:
-		assert self._process
+		assert self._message
 		assert self._dictionary is not None
-		self._process.close_dialog()
+		self._message.func.close_dialog()
 		self._dictionary=None
 
 	def open_dialog(self, dictionary: Union[str, Dictionary])->None:
@@ -152,8 +163,8 @@ class Manager:
 				self._engine.dictionaries[dictionary]
 				if isinstance(dictionary, str) else dictionary)
 		assert self._dictionary is not None
-		assert self._process is not None
-		self._process.open_dialog()
+		assert self._message is not None
+		self._message.call.open_dialog()
 
 	def is_showing(self, dictionary: Dictionary)->bool:
 		return self._dictionary is dictionary
