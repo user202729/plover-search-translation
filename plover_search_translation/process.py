@@ -157,8 +157,11 @@ from .lib import text_to_outline
 def add_translation()->None:
 	assert state is WINDOW_OPEN or isinstance(state, Editing)
 
-	if not (dialog.output.text() and dialog.description.text()):
-		show_error("Output and description must be filled")
+	if not dialog.output.text():
+		show_error("Output must be filled")
+		return
+	if not (dialog.brief.text() or dialog.description.text()):
+		show_error("Brief or description must be filled")
 		return
 
 	new_entry=Entry(
