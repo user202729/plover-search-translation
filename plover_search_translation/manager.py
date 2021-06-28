@@ -50,11 +50,11 @@ class Manager:
 				)
 
 		self._message.register_call(self.show_error)
-		self._message.call.remove_translation=self.on_remove
-		self._message.call.picked=self.on_pick
+		self._message.register_call(self.remove_translation)
+		self._message.register_call(self.picked)
 
-		self._message.func.add_translation=self.on_add
-		self._message.func.search=self.on_search
+		self._message.register_func(self.add_translation)
+		self._message.register_func(self.search)
 		self._message.register_func(self.lookup)
 
 		self._message.register_call(self.save_column_width)
@@ -91,7 +91,10 @@ class Manager:
 		from plover import log  # type: ignore
 		log.error(message)
 
-	def on_pick(self, entry: Optional[Entry])->None:
+	def picked(self, entry: Optional[Entry])->None:
+		"""
+		This function is called when the subprocess picks an entry.
+		"""
 		assert self._dictionary is not None
 
 		self._dictionary=None
@@ -125,19 +128,19 @@ class Manager:
 		except:
 			traceback.print_exc()
 
-	def on_add(self, entry: Entry)->bool:
+	def add_translation(self, entry: Entry)->bool:
 		assert self._dictionary is not None
 		if not self._dictionary.add(entry):
 			return False
 		self._dictionary.save()
 		return True
 
-	def on_remove(self, entry: Entry)->None:
+	def remove_translation(self, entry: Entry)->None:
 		assert self._dictionary is not None
 		self._dictionary.remove(entry)
 		self._dictionary.save()
 
-	def on_search(self, query: str)->List[Entry]:
+	def search(self, query: str)->List[Entry]:
 		assert self._dictionary is not None
 		return self._dictionary.search(query)
 
