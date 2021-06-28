@@ -14,6 +14,7 @@ import re
 import math
 
 from plover.steno_dictionary import StenoDictionary  # type: ignore
+from plover import log  # type: ignore
 
 from . import manager
 from .lib import Entry, with_print_exception, Outline
@@ -211,7 +212,8 @@ class Dictionary(StenoDictionary):
 			description=entry.description
 		else:
 			description=""
-		self._add(Entry(description=description, translation=value, brief=key))
+		successful=self._add(Entry(description=description, translation=value, brief=key))
+		assert successful
 
 	def __iter__(self)->Iterable[Tuple[Outline, str]]:
 		"""
@@ -252,16 +254,23 @@ class Dictionary(StenoDictionary):
 		"""
 		self.entries=[]
 
-	def _add(self, entry: Entry)->None:
+	def _add(self, entry: Entry)->bool:
 		"""
 		Internal method. Does not lock.
+
+		See :meth:`add`.
 		"""
 		if entry.brief:
 			assert entry.brief!=(self.search_stroke,)
-			assert entry.brief not in self.dict
+			if entry.brief in self.dict:
+				return False
 			self.dict[entry.brief]=entry
 			if self._longest_key<len(entry.brief): self._longest_key=len(entry.brief)
+		else:
+			if entry in self.entries:
+				return False
 		self.entries.append(entry)
+		return True
 
 	def _remove(self, entry: Entry)->None:
 		"""
@@ -279,11 +288,13 @@ class Dictionary(StenoDictionary):
 
 	@with_print_exception
 	@with_lock
-	def add(self, entry: Entry)->None:
+	def add(self, entry: Entry)->bool:
 		"""
 		Add an entry to the dictionary.
+
+		Return True if the addition is successful (there's no duplicate), False otherwise.
 		"""
-		self._add(entry)
+		return self._add(entry)
 
 	@with_print_exception
 	@with_lock
@@ -308,10 +319,16 @@ class Dictionary(StenoDictionary):
 
 			self.entries=[]
 			self._longest_key=1
+			invalid_entry: Optional[Entry]=None
 			for x in data["entries"]:
+				# it's necessary to add each element instead of setting self.entries directly
+				# to handle briefs and errors/duplicate elements
 				entry=Entry.from_tuple(x)
-				self._add(entry)  # handle brief
+				if not self._add(entry):
+					invalid_entry=entry
 			assert self.longest_key>=1
+			if invalid_entry is not None:
+				log.warning(f"There are invalid entries in the dictionary -- {invalid_entry}")
 		else:
 			assert False, f"Unsupported dictionary version: {version}"
 

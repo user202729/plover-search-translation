@@ -29,10 +29,10 @@ class Process:
 				)
 
 		self._message.call.show_error=lambda message: self.show_error(message)
-		self._message.call.add_translation=lambda entry: self.on_add(entry)
 		self._message.call.remove_translation=lambda entry: self.on_remove(entry)
 		self._message.call.picked=lambda entry: self.on_pick(entry)
 
+		self._message.func.add_translation=lambda entry: self.on_add(entry)
 		self._message.func.search=lambda query: self.on_search(query)
 		self._message.func.lookup=lambda outline: self.lookup(outline)
 
@@ -63,7 +63,7 @@ class Process:
 	def on_pick(self, entry: Optional[Entry])->None:
 		pass
 
-	def on_add(self, entry: Entry)->None:
+	def on_add(self, entry: Entry)->bool:
 		pass
 
 	def on_remove(self, entry: Entry)->None:
@@ -90,7 +90,7 @@ if __name__=="__main__":
 	import time
 	process=Process()
 
-	process.on_add=lambda entry: print("Added", entry)  # type: ignore
+	process.on_add=lambda entry: [print("Added", entry), True][-1]  # type: ignore
 	process.on_pick=lambda entry: print("Picked", entry)  # type: ignore
 	process.on_remove=lambda entry: print("Removed", entry)  # type: ignore
 

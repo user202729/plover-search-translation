@@ -171,18 +171,21 @@ def add_translation()->None:
 		)
 
 	if state is WINDOW_OPEN:
+		if not message.func.add_translation(new_entry):
+			show_error("Cannot add translation")
+			return
 		dialog.matches.insertRow(0)
 		dialog.refresh_all_vertical_header()
 		dialog.set_row_data(0, new_entry)
-		message.call.add_translation(new_entry)
 	else:
 		assert isinstance(state, Editing), state
 		old_entry=state.entry
-		dialog.set_row_data(state.row, new_entry)
-		set_state(WINDOW_OPEN)
 		if old_entry!=new_entry:
 			message.call.remove_translation(old_entry)
-			message.call.add_translation(new_entry)
+			if not message.func.add_translation(new_entry):
+				show_error("Cannot edit translation (unsupported state. Behavior is undefined)")
+		dialog.set_row_data(state.row, new_entry)
+		set_state(WINDOW_OPEN)
 
 	dialog.output.setText("")
 	dialog.description.setFocus()

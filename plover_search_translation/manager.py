@@ -114,10 +114,12 @@ class Manager:
 		except:
 			traceback.print_exc()
 
-	def on_add(self, entry: Entry)->None:
+	def on_add(self, entry: Entry)->bool:
 		assert self._dictionary is not None
-		self._dictionary.add(entry)
+		if not self._dictionary.add(entry):
+			return False
 		self._dictionary.save()
+		return True
 
 	def on_remove(self, entry: Entry)->None:
 		assert self._dictionary is not None
