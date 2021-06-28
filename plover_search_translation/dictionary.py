@@ -272,6 +272,44 @@ class Dictionary(StenoDictionary):
 		self.entries.append(entry)
 		return True
 
+	def _recalculate_longest_key(self)->None:
+		self._longest_key=max(len(outline) for outline in self.dict)
+
+	def _edit(self, old: Entry, new: Entry)->bool:
+		"""
+		Internal method. Does not lock.
+
+		See :meth:`edit`.
+		"""
+		if old==new: return True
+
+		i: int=self.entries.index(old)  # might raise ValueError for invalid `old` value
+
+		if new in self.entries:
+			return False  # because new!=old
+
+		if new.brief in self.dict and new.brief!=old.brief:
+			return False
+
+		if old.brief:
+			assert self.dict[old.brief]==old  # dictionary consistency, because (old in entries)
+			del self.dict[old.brief]
+
+		if new.brief:
+			assert new.brief!=(self.search_stroke,)
+			assert new.brief not in self.dict
+			self.dict[new.brief]=new
+			if self._longest_key<len(new.brief): self._longest_key=len(new.brief)
+
+		if old.brief!=new.brief and len(old.brief)==self._longest_key:
+			assert old.brief
+			self._recalculate_longest_key()
+
+		self.entries[i]=new
+
+		return True
+
+
 	def _remove(self, entry: Entry)->None:
 		"""
 		Internal method. Does not lock.
@@ -281,7 +319,7 @@ class Dictionary(StenoDictionary):
 			assert self.dict[entry.brief]==entry
 			del self.dict[entry.brief]
 			if self._longest_key==entry.brief:
-				self._longest_key=max(len(outline) for outline in self.dict)
+				self._recalculate_longest_key()
 		old_length=len(self.entries)
 		self.entries=[x for x in self.entries if entry!=x]
 		assert old_length-1==len(self.entries), (self.entries, old_length, entry)
@@ -295,6 +333,16 @@ class Dictionary(StenoDictionary):
 		Return True if the addition is successful (there's no duplicate), False otherwise.
 		"""
 		return self._add(entry)
+
+	@with_print_exception
+	@with_lock
+	def edit(self, old: Entry, new: Entry)->bool:
+		"""
+		Return True if the edition is successful (there's no duplicate), False otherwise.
+
+		If False is returned, the dictionary is not modified.
+		"""
+		return self._edit(old, new)
 
 	@with_print_exception
 	@with_lock

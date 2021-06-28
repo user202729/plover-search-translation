@@ -54,6 +54,7 @@ class Manager:
 		self._message.register_call(self.picked)
 
 		self._message.register_func(self.add_translation)
+		self._message.register_func(self.edit_translation)
 		self._message.register_func(self.search)
 		self._message.register_func(self.lookup)
 
@@ -131,6 +132,13 @@ class Manager:
 	def add_translation(self, entry: Entry)->bool:
 		assert self._dictionary is not None
 		if not self._dictionary.add(entry):
+			return False
+		self._dictionary.save()
+		return True
+
+	def edit_translation(self, old: Entry, new: Entry)->bool:
+		assert self._dictionary is not None
+		if not self._dictionary.edit(old, new):
 			return False
 		self._dictionary.save()
 		return True

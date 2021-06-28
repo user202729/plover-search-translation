@@ -181,9 +181,9 @@ def add_translation()->None:
 		assert isinstance(state, Editing), state
 		old_entry=state.entry
 		if old_entry!=new_entry:
-			message.call.remove_translation(old_entry)
-			if not message.func.add_translation(new_entry):
-				show_error("Cannot edit translation (unsupported state. Behavior is undefined)")
+			if not message.func.edit_translation(old_entry, new_entry):
+				show_error("Cannot edit translation")
+				return
 		dialog.set_row_data(state.row, new_entry)
 		set_state(WINDOW_OPEN)
 
