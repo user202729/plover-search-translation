@@ -254,11 +254,15 @@ class Dictionary(StenoDictionary):
 		"""
 		self.entries=[]
 
-	def _add(self, entry: Entry)->bool:
+	def _add(self, entry: Entry, check: bool=True)->bool:
 		"""
 		Internal method. Does not lock.
 
 		See :meth:`add`.
+
+		Parameters:
+			check: whether to compare the entry with all existing entries to ensure there's no duplicate.
+				Setting this parameter to ``False`` will make the code faster.
 		"""
 		if entry.brief:
 			assert entry.brief!=(self.search_stroke,)
@@ -267,7 +271,7 @@ class Dictionary(StenoDictionary):
 			self.dict[entry.brief]=entry
 			if self._longest_key<len(entry.brief): self._longest_key=len(entry.brief)
 		else:
-			if entry in self.entries:
+			if check and entry in self.entries:
 				return False
 		self.entries.append(entry)
 		return True
@@ -368,12 +372,14 @@ class Dictionary(StenoDictionary):
 			self.entries=[]
 			self._longest_key=1
 			invalid_entry: Optional[Entry]=None
+			seen: Set[Entry]=set()
 			for x in data["entries"]:
 				# it's necessary to add each element instead of setting self.entries directly
 				# to handle briefs and errors/duplicate elements
 				entry=Entry.from_tuple(x)
-				if not self._add(entry):
+				if entry in seen or not self._add(entry, check=False):
 					invalid_entry=entry
+				seen.add(entry)
 			assert self.longest_key>=1
 			if invalid_entry is not None:
 				log.warning(f"There are invalid entries in the dictionary -- {invalid_entry}")
