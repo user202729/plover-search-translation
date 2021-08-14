@@ -130,6 +130,7 @@ def open_dialog()->None:
 	dialog.brief.setText("")
 	dialog.briefConflictLabel.setText("")
 	dialog.matches.setRowCount(0)
+	dialog.matches.scrollToTop()
 	repopulate_matches("")
 	dialog.show()
 	load_column_width()
