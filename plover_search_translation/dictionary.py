@@ -19,6 +19,7 @@ from plover import log  # type: ignore
 from . import manager
 from .lib import Entry, with_print_exception, Outline
 
+from fuzzywuzzy import fuzz  # type: ignore
 
 current_dictionary: Optional["Dictionary"]=None
 
@@ -88,23 +89,10 @@ def match_score(query: str, entry: Entry)->Any: # comparable (for the same value
 	if query==entry.translation or query==entry.description:
 		return math.inf
 
-	if len(query)<=3:
-		if query in entry.description:
-			return 10000-len(entry.translation)-len(entry.description)
-		elif query in entry.translation:
-			return -len(entry.translation)-len(entry.description)
-		else:
-			return -math.inf
-
-	if not {*ngrams_padded(query, 4)}&{
-			*ngrams_padded(entry.translation, 4),
-			*ngrams_padded(entry.description, 4),
-			}:
-		return -math.inf
-
-	return -edit_distance_mod(query, entry.translation+' '+entry.description)
-	# smaller edit distance is better
-
+	return max(
+			fuzz.ratio(query, x)
+			for x in [entry.translation] + entry.description.split("|")
+			)
 
 class Dictionary(StenoDictionary):
 	"""
