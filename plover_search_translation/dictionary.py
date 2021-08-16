@@ -347,6 +347,24 @@ class Dictionary(StenoDictionary):
 		"""
 		self._remove(entry)
 
+	def _add_multiple(self, entries: Iterable[Entry])->Optional[Entry]:
+		"""
+		Add multiple entries to the dictionary quickly.
+		Does not lock.
+
+		Returns None if the addition is successful, otherwise return any invalid entry.
+		Warning: if there's an invalid_entry, it's not guaranteed that the dictionary is not modified.
+		"""
+		invalid_entry: Optional[Entry]=None
+		seen: Set[Entry]={*self.entries}
+		for entry in entries:
+			# it's necessary to add each element instead of setting self.entries directly
+			# to handle briefs and errors/duplicate elements
+			if entry in seen or not self._add(entry, check=False):
+				invalid_entry=entry
+			seen.add(entry)
+		return invalid_entry
+
 	def _load_nolock(self, filename: str)->None:
 		with open(filename, "r", encoding='u8') as f:
 			data=json.load(f)
@@ -359,15 +377,9 @@ class Dictionary(StenoDictionary):
 
 			self.entries=[]
 			self._longest_key=1
-			invalid_entry: Optional[Entry]=None
-			seen: Set[Entry]=set()
-			for x in data["entries"]:
-				# it's necessary to add each element instead of setting self.entries directly
-				# to handle briefs and errors/duplicate elements
-				entry=Entry.from_tuple(x)
-				if entry in seen or not self._add(entry, check=False):
-					invalid_entry=entry
-				seen.add(entry)
+
+			invalid_entry=self._add_multiple(Entry.from_tuple(x) for x in data["entries"])
+
 			assert self.longest_key>=1
 			if invalid_entry is not None:
 				log.warning(f"There are invalid entries in the dictionary -- {invalid_entry}")
