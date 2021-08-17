@@ -144,6 +144,7 @@ class Dictionary(StenoDictionary):
 
 		result=self.dict[key].translation  # might raise KeyError
 		if self.pick_on_write and manager.instance and manager.instance.is_showing(self):
+			manager.instance.last_translation=result
 			result="{:command:plover_search_translation_close_dialog}"+result
 			# (must close the dialog before sending the commands)
 		return result

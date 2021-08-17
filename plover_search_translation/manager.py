@@ -37,6 +37,11 @@ class Manager:
 			lambda config, key, value: value
 			)
 
+		# The last translation that the user picked (explicitly by pressing [Pick]
+		# or implicitly by pick_on_write)
+		# Dictionaries can set this, but other programs should not
+		self.last_translation: Optional[str]=None
+
 	def start(self)->None:
 		"""
 		Called when Plover starts (or the extension plugin is enabled)
@@ -109,8 +114,14 @@ class Manager:
 
 		try:
 			inject_translation(self._engine, mapping)
+			self.last_translation=mapping
 		except:
 			traceback.print_exc()
+
+	def resend_last(self)->None:
+		if self.last_translation is None:
+			raise RuntimeError("There's no last_translation!")
+		inject_translation(self._engine, self.last_translation)
 
 	def add_translation(self, entry: Entry)->bool:
 		assert self._dictionary is not None

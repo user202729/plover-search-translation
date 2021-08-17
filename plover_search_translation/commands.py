@@ -17,3 +17,8 @@ def close_dialog(engine: StenoEngine, argument: str)->None:
 	assert not argument
 	from . import manager
 	manager.get().close_dialog()
+
+def resend_last(engine: StenoEngine, argument: str)->None:
+	assert not argument
+	from . import manager
+	manager.get().resend_last()
