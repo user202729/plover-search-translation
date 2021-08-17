@@ -16,7 +16,7 @@ import math
 from plover.steno_dictionary import StenoDictionary  # type: ignore
 from plover import log  # type: ignore
 
-from . import manager
+from . import manager, lib
 from .lib import Entry, with_print_exception, Outline
 
 from fuzzywuzzy import fuzz  # type: ignore
@@ -86,7 +86,7 @@ def match_score(query: str, entry: Entry)->Any: # comparable (for the same value
 	Return the match score for searching.
 	"""
 	# quickly filter out unlikely entries first for performance
-	if query==entry.translation or query==entry.description:
+	if query==entry.translation or query==entry.description or lib.text_to_outline(query)==entry.brief:
 		return math.inf
 
 	return max(
