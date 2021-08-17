@@ -8,6 +8,9 @@ from pathlib import Path
 import tempfile
 import json
 
+if typing.TYPE_CHECKING:
+	import plover.engine  # type: ignore
+
 Outline=Tuple[str, ...]
 
 T=TypeVar("T", bound=Callable)
@@ -93,3 +96,32 @@ def throttle(seconds: float)->Callable[[T], T]:
 
 		return typing.cast(T, wrapped)
 	return result
+
+
+def inject_translation(engine: "plover.engine.StenoEngine", mapping: str)->None:
+	"""
+	Inject a translation into the engine.
+
+	``mapping`` is a string and can be either a translation or a macro.
+
+	Might raise an error if `mapping` is invalid or similar.
+
+	Does not trigger the `stroked` hook.
+	"""
+	with engine:
+		from plover.steno import Stroke  # type: ignore
+		from plover.translation import _mapping_to_macro, Translation  # type: ignore
+		stroke = Stroke([]) # required, because otherwise Plover will try to merge the outlines together
+		# and the outline [] (instead of [Stroke([])]) can be merged to anything
+		macro = _mapping_to_macro(mapping, stroke)
+		if macro is not None:
+			engine._translator.translate_macro(macro)
+			return
+		t = (
+			#engine._translator._find_translation_helper(stroke) or
+			#engine._translator._find_translation_helper(stroke, system.SUFFIX_KEYS) or
+			Translation([stroke], mapping)
+		)
+		engine._translator.translate_translation(t)
+		engine._translator.flush()
+		#engine._trigger_hook('stroked', stroke)

@@ -19,7 +19,7 @@ if typing.TYPE_CHECKING:
 
 from subprocess_connection import Message
 
-from .lib import with_print_exception, Outline
+from .lib import with_print_exception, Outline, inject_translation
 
 
 class Manager:
@@ -108,24 +108,7 @@ class Manager:
 		mapping=entry.translation
 
 		try:
-			with self._engine:
-				from plover.steno import Stroke  # type: ignore
-				from plover.translation import _mapping_to_macro, Translation  # type: ignore
-				stroke = Stroke([]) # required, because otherwise Plover will try to merge the outlines together
-				# and the outline [] (instead of [Stroke([])]) can be merged to anything
-				macro = _mapping_to_macro(mapping, stroke)
-				if macro is not None:
-					self._engine._translator.translate_macro(macro)
-					return
-				t = (
-					#self._engine._translator._find_translation_helper(stroke) or
-					#self._engine._translator._find_translation_helper(stroke, system.SUFFIX_KEYS) or
-					Translation([stroke], mapping)
-				)
-				self._engine._translator.translate_translation(t)
-				self._engine._translator.flush()
-				#self._engine._trigger_hook('stroked', stroke)
-
+			inject_translation(self._engine, mapping)
 		except:
 			traceback.print_exc()
 
