@@ -87,11 +87,19 @@ def match_score(query: str, entry: Entry)->Any: # comparable (for the same value
 	"""
 	# quickly filter out unlikely entries first for performance
 	if query==entry.translation or query==entry.description or lib.text_to_outline(query)==entry.brief:
-		return math.inf
+		return (math.inf, 0)
 
-	return max(
+	words=query.split()
+	for i, word in enumerate(words):
+		if word[-1:].lower() in ("e", "i", "y"):
+			words[i]=word[:-1]
+
+	return (
+			all(word in entry.description or word in entry.translation for word in words),
+			max(
 			fuzz.ratio(query, x)
 			for x in [entry.translation] + entry.description.split("|")
+			)
 			)
 
 class Dictionary(StenoDictionary):
