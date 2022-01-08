@@ -160,7 +160,7 @@ class Dictionary(StenoDictionary):
 	@with_lock
 	def __getitem__(self, key: Outline)->str:
 		"""
-		Like `_getitem`, but locked.
+		Like `_getitem`, but locks the dictionary.
 		"""
 		return self._getitem(key)
 
@@ -168,18 +168,18 @@ class Dictionary(StenoDictionary):
 		"""
 		Lookup an item by its brief (outline).
 
-		Uses another public method `__getitem__`, must not lock.
+		Uses another public method `__getitem__`, dictionary must not be already locked.
 		"""
 		try: result=self[key]
 		except KeyError: return default
 		assert result is not None
 		return result
 
-	def __contains__(self, key)->bool:
+	def __contains__(self, key: Outline)->bool:
 		"""
 		Check if an outline is in this dictionary.
 
-		Uses another public method `get`, must not lock.
+		Uses another public method `get`, dictionary must not be already locked.
 		"""
 		return self.get(key) is not None
 
