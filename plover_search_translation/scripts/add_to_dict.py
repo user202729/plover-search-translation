@@ -14,6 +14,8 @@ def main()->None:
 	parser.add_argument("--create-backup-file", action="store_true", default=True)
 	parser.add_argument("--no-create-backup-file", action="store_false", dest="create_backup_file")
 	parser.add_argument("--restore-from-backup-file", action="store_true")
+	parser.add_argument("--force", help="Add entries even if there are invalid (conflicting) entries. "
+			"Entries in the original JST dictionary are prioritized.", action="store_true")
 	args=parser.parse_args()
 
 	import json
@@ -22,6 +24,7 @@ def main()->None:
 	from typing import Dict
 	import typing
 	import tempfile
+	import sys
 
 	backup_path= Path(tempfile.gettempdir()) / (args.target_dictionary.stem + "__backup")
 	if args.restore_from_backup_file:
@@ -46,7 +49,7 @@ def main()->None:
 			source_absolute=args.source_json_dictionary.absolute(),
 			)
 
-	invalid_entry=dictionary._add_multiple(
+	invalid_entries=dictionary._add_multiple(
 			Entry(
 				translation=translation,
 				description=args.description.format(
@@ -57,8 +60,16 @@ def main()->None:
 				brief=tuple(outline.split("/"))
 				)
 			for outline, translation in source_data.items())
-	if invalid_entry is not None:
-		raise RuntimeError(f"Invalid entry: {invalid_entry}")
+	if invalid_entries:
+		print("Found some invalid entries.", file=sys.stderr)
+		if args.force:
+			print("All valid entries will be added to the dictionary.", file=sys.stderr)
+		else:
+			print("Run with --force to force add.", file=sys.stderr)
+			print("Invalid entries:", file=sys.stderr)
+			for entry in invalid_entries:
+				print(entry, file=sys.stderr)
+			return
 	dictionary.save()
 
 
