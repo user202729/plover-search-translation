@@ -456,3 +456,29 @@ class Dictionary(StenoDictionary):
 		Return the entries that match the query.
 		"""
 		return self._search(query)
+
+	def _reverse_lookup(self, translation: str, case_sensitive: bool)->List[Tuple[str, ...]]:
+		"""
+		Return the list of outlines that matches the translation.
+
+		Internal method, does not lock.
+		"""
+		if case_sensitive:
+			return [entry.brief for entry in self.entries if entry.translation==translation]
+		else:
+			translation=translation.casefold()
+			return [entry.brief for entry in self.entries if entry.translation.casefold()==translation]
+
+	@with_lock
+	def reverse_lookup(self, value: str)->List[Tuple[str, ...]]:
+		"""
+		Refer to the method in StenoDictionary class.
+		"""
+		return self._reverse_lookup(value, case_sensitive=True)
+
+	@with_lock
+	def casereverse_lookup(self, value: str)->List[Tuple[str, ...]]:
+		"""
+		Refer to the method in StenoDictionary class.
+		"""
+		return self._reverse_lookup(value, case_sensitive=False)
