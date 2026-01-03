@@ -13,8 +13,9 @@ import typing
 import functools
 
 
-from PyQt5.QtCore import QEvent, Qt
-from PyQt5.QtWidgets import QTableWidgetItem, QDialog, QShortcut
+from PySide6.QtCore import QEvent, Qt
+from PySide6.QtWidgets import QTableWidgetItem, QDialog
+from PySide6.QtGui import QShortcut
 
 from .search_translation_dialog_ui import Ui_SearchTranslationDialog
 from .lib import text_to_outline, Entry

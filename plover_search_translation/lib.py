@@ -59,7 +59,7 @@ class Entry:  # field order is important
 
 
 def throttle(seconds: float)->Callable[[T], T]:
-	"""
+	r"""
 	Wait for <seconds> seconds, collect all the function calls, then only call the last function.
 
 	The delay is only approximate, may be longer if the actual function call takes a long time.

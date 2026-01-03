@@ -14,8 +14,8 @@ faulthandler.enable()
 
 import time
 
-from PyQt5.QtCore import Qt  # type: ignore
-from PyQt5.QtWidgets import QApplication  # type: ignore
+from PySide6.QtCore import Qt  # type: ignore
+from PySide6.QtWidgets import QApplication  # type: ignore
 
 import html
 
@@ -24,9 +24,9 @@ from subprocess_connection import Message
 from .lib import Entry, throttle
 from .gui import SearchTranslationDialog
 
-from PyQt5.QtCore import pyqtSignal, QVariant, QObject
+from PySide6.QtCore import Signal, QObject
 class SignalObject(QObject):
-	signal = pyqtSignal(QVariant)
+	signal = Signal("QVariant")
 signal_object=SignalObject()  # must keep a reference to the object
 signal_data=signal_object.signal
 
@@ -310,5 +310,5 @@ dialog.brief.textChanged.connect(brief_changed)
 
 message.start(on_stop=lambda: app.exit(0))
 
-returncode=app.exec_()
+returncode=app.exec()
 assert returncode==0
